@@ -189,7 +189,7 @@ function update() {
     ctx.translate(player.x + player.width/2, player.y + player.height/2);
     ctx.scale(player.facing, 1);
 
-    let sprite = player.velocityY > 0 ? playerFly : playerStand;
+    let sprite = player.velocityY > 0 ? player_fly : player_stand;
 
     ctx.drawImage(
         sprite,
@@ -242,8 +242,8 @@ function checkStart() {
 }
 
 background.onload = checkStart;
-playerStand.onload = checkStart;
-playerFly.onload = checkStart;
+player_stand.onload = checkStart;
+player_fly.onload = checkStart;
 </script>
 </body>
 </html>
