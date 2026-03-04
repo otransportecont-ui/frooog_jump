@@ -231,8 +231,19 @@ function handleOrientation(event) {
     player.velocityX = tilt * 0.3;
 }
 
-createPlatforms();
-update();
+let imagesLoaded = 0;
+
+function checkStart() {
+    imagesLoaded++;
+    if (imagesLoaded === 3) {
+        createPlatforms();
+        update();
+    }
+}
+
+background.onload = checkStart;
+playerStand.onload = checkStart;
+playerFly.onload = checkStart;
 </script>
 </body>
 </html>
