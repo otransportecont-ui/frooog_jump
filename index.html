@@ -79,6 +79,12 @@ player_fly.src = "player_fly.png";
 
 let player_fly_left = new Image();
 player_fly_left.src = "player_fly_left.png";
+
+let player_flyd = new Image();
+player_flyd.src = "player_flyd.png";
+
+let player_flyd_left = new Image();
+player_flyd_left.src = "player_flyd_left.png";
     
 let player = {
     x: canvas.width / 2,
@@ -226,11 +232,15 @@ function update() {
     ctx.scale(player.facing, 1);
 
     // Спрайт: летит, если не на земле
-    let sprite;
+   let sprite;
 
     if (player.onGround) {
         sprite = player_stand;
-    } else {
+    } 
+    else if (player.velocityY > 0) { // ПАДАЕТ
+        sprite = player.velocityX >= 0 ? player_flyd : player_flyd_left;
+    } 
+    else { // ЛЕТИТ ВВЕРХ
         sprite = player.velocityX >= 0 ? player_fly : player_fly_left;
     }
     
@@ -315,7 +325,7 @@ canvas.addEventListener("touchend", () => {
 
 // Запуск игры после загрузки изображений
 let imagesLoaded = 0;
-const totalImages = 4;
+const totalImages = 6;
 
 function checkStart() {
     imagesLoaded++;
@@ -332,12 +342,16 @@ background.onload = background.onerror = checkStart;
 player_stand.onload = player_stand.onerror = checkStart;
 player_fly.onload = player_fly.onerror = checkStart;
 player_fly_left.onload = player_fly_left.onerror = checkStart;
+player_flyd.onload = player_flyd.onerror = checkStart;
+player_flyd_left.onload = player_flyd_left.onerror = checkStart;
     
 // Если картинки кэшированы и onload не сработает
 if (background.complete) checkStart();
 if (player_stand.complete) checkStart();
 if (player_fly.complete) checkStart();
 if (player_fly_left.complete) checkStart();
+if (player_flyd.complete) checkStart();
+if (player_flyd_left.complete) checkStart();
     
 // Ресайз окна
 window.addEventListener("resize", () => {
