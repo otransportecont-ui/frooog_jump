@@ -303,24 +303,6 @@ window.addEventListener("keyup", (e) => {
     }
 });
 
-// Тач-управление (свайпы)
-let touchStartX = 0;
-canvas.addEventListener("touchstart", (e) => {
-    touchStartX = e.touches[0].clientX;
-    e.preventDefault();
-}, {passive: false});
-
-canvas.addEventListener("touchmove", (e) => {
-    let touchX = e.touches[0].clientX;
-    let diff = touchX - touchStartX;
-    player.velocityX = diff * 0.2;
-    e.preventDefault();
-}, {passive: false});
-
-canvas.addEventListener("touchend", () => {
-    player.velocityX = 0;
-});
-
 // Запуск игры после загрузки изображений
 let imagesLoaded = 0;
 const totalImages = 6;
