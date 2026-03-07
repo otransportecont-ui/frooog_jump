@@ -215,7 +215,6 @@ function update() {
         platforms.forEach(platform => {
             platform.y += diff;
             // Рециклинг платформ
-            if (platform.y > canvas.height) {
             if (platform.y > canvas.height) { 
                 platform.y = -platformHeight; 
                 platform.x = Math.random() * (canvas.width - platformWidth); 
