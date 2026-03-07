@@ -219,8 +219,23 @@ function update() {
             player.y + player.height < platform.y + platform.height + player.velocityY &&
             !platform.broken
         ) {
-            player.velocityY = jumpPower;
             player.onGround = true;
+
+// если таймер ещё не запущен
+                if (!jumpTimer) {
+
+                jumpTimer = setTimeout(() => {
+
+                player.velocityY = jumpPower;
+
+        if (platform.type === "break") {
+            platform.broken = true;
+        }
+
+        jumpTimer = null;
+
+    }, jumpDelay);
+}
                         // Начисление очков за новые платформы
 
             if (platform.type === "break") {
