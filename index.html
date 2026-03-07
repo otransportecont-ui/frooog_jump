@@ -115,7 +115,8 @@ class Platform {
 
     update() {
         if (this.type === "moving") {
-            this.x += 2 * this.direction;
+            let speed = Math.min(2 + score * 0.002, 8);
+            this.x += speed * this.direction;
             if (this.x <= 0 || this.x + this.width >= canvas.width) {
                 this.direction *= -1;
             }
