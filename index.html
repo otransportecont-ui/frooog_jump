@@ -216,20 +216,14 @@ function update() {
             platform.y += diff;
             // Рециклинг платформ
             if (platform.y > canvas.height) {
-
-                 // ищем самую верхнюю платформу
-                let highest = platforms[0].y;
-                for (let p of platforms) {
-            if (p.y < highest) highest = p.y;
-            }
-
-            // ставим новую выше неё
             if (platform.y > canvas.height) { 
-                platform.y = -platformHeight;
-                platform.x = Math.random() * (canvas.width - platformWidth);
-                platform.broken = false; }
+                platform.y = -platformHeight; 
+                platform.x = Math.random() * (canvas.width - platformWidth); 
+                platform.broken = false; 
+                } 
             }); 
     }
+         
 
     // Отрисовка персонажа
     ctx.save();
