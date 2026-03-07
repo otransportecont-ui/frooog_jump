@@ -197,11 +197,6 @@ function update() {
             player.velocityY = jumpPower;
             player.onGround = true;
                         // Начисление очков за новые платформы
-            if (platform.y < lastPlatformY - 10) {
-                score++;
-                scoreDisplay.innerText = score;
-                lastPlatformY = platform.y;
-            }
 
             if (platform.type === "break") {
                 platform.broken = true;
