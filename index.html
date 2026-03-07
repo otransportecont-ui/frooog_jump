@@ -63,8 +63,6 @@ canvas.height = window.innerHeight;
 
 let gravity = 0.5;
 let jumpPower = -15;
-let jumpDelay = 300;
-let jumpTimer = null;
 let score = 0;
 let lastPlatformY = 0;
 let gameStarted = false;
@@ -219,23 +217,12 @@ function update() {
             player.y + player.height < platform.y + platform.height + player.velocityY &&
             !platform.broken
         ) {
+            player.velocityY = jumpPower;
             player.onGround = true;
 
-// если таймер ещё не запущен
-                if (!jumpTimer) {
-
-                jumpTimer = setTimeout(() => {
-
-                player.velocityY = jumpPower;
-
-        if (platform.type === "break") {
-            platform.broken = true;
-        }
-
-        jumpTimer = null;
-
-    }, jumpDelay);
-}
+            if (platform.type === "break") {
+                platform.broken = true;
+            }
                         // Начисление очков за новые платформы
 
             if (platform.type === "break") {
