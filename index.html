@@ -137,6 +137,22 @@ class Platform {
     }
 }
 
+function overlapsPlatform(x, y) {
+    for (let p of platforms) {
+
+        let sameHeight = Math.abs(p.y - y) < platformHeight;
+
+        let overlapX =
+            x < p.x + p.width &&
+            x + platformWidth > p.x;
+
+        if (sameHeight && overlapX) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function createPlatforms() {
     platforms = [];
     let y = canvas.height - 50;
@@ -144,7 +160,13 @@ function createPlatforms() {
     platforms.push(new Platform(canvas.width/2 - platformWidth/2, canvas.height - 50, "static"));
     
     while (y > -platformGap) {
-        let x = Math.random() * (canvas.width - platformWidth);
+        let x;
+            let attempts = 0;
+
+            do {
+                x = Math.random() * (canvas.width - platformWidth);
+                attempts++;
+    } while (overlapsPlatform(x, y) && attempts < 10);
         let type = Math.random() > 0.8 ? "moving" : (Math.random() > 0.9 ? "break" : "static");
         platforms.push(new Platform(x, y, type));
         y -= platformGap;
@@ -217,7 +239,12 @@ function update() {
             // Рециклинг платформ
             if (platform.y > canvas.height) { 
                 platform.y = -platformHeight; 
-                platform.x = Math.random() * (canvas.width - platformWidth); 
+                let attempts = 0;
+
+                do {
+                        platform.x = Math.random() * (canvas.width - platformWidth);
+                        attempts++;
+                } while (overlapsPlatform(platform.x, platform.y) && attempts < 10);
                 platform.broken = false; 
                 } 
             }); 
