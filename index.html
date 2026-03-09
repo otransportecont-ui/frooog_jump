@@ -159,6 +159,13 @@
                 this.type = type;
                 this.broken = false;
                 this.direction = 1;
+
+                // для шипов
+                this.spikeSide = Math.random() > 0.5 ? "left" : "right";
+
+                // для обманки
+                this.touched = false;
+                }
             }
 
             update() {
@@ -180,6 +187,8 @@
                 if (this.type === "static") ctx.fillStyle = "#4CAF50";
                 if (this.type === "moving") ctx.fillStyle = "#FF9800";
                 if (this.type === "break") ctx.fillStyle = this.broken ? "#999" : "#f44336";
+                if (this.type === "fake") ctx.fillStyle = "#9C27B0";
+                if (this.type === "spike") ctx.fillStyle = "#607D8B";
 
                 if (!this.broken) {
 
@@ -190,6 +199,24 @@
 
                     ctx.strokeRect(this.x, this.y, this.width, this.height);
                 }
+                if (this.type === "spike") {
+
+    let spikeWidth = this.width / 2;
+    let startX = this.spikeSide === "left" ? this.x : this.x + spikeWidth;
+
+    ctx.fillStyle = "#222";
+
+    for (let i = 0; i < spikeWidth; i += 10) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(startX + i, this.y);
+        ctx.lineTo(startX + i + 5, this.y - 10);
+        ctx.lineTo(startX + i + 10, this.y);
+
+        ctx.fill();
+    }
+}
             }
         }
 
@@ -228,10 +255,13 @@
                 }
                 while (overlapsPlatform(x, y) && attempts < 10);
 
-                let type =
-                    Math.random() > 0.8
-                        ? "moving"
-                        : (Math.random() > 0.9 ? "break" : "static");
+                let r = Math.random();
+let type = "static";
+
+if (r > 0.9) type = "moving";
+else if (r > 0.82) type = "break";
+else if (r > 0.74) type = "fake";
+else if (r > 0.66) type = "spike";
 
                 platforms.push(new Platform(x, y, type));
 
@@ -357,13 +387,39 @@
 
                 platform.update();
 
-                if (
-                    player.velocityY > 0 &&
-                    player.x + player.width > platform.x &&
-                    player.x < platform.x + platform.width &&
-                    player.y + player.height > platform.y &&
-                    player.y + player.height < platform.y + platform.height + player.velocityY &&
-                    !platform.broken
+                // если платформа обманка
+if (platform.type === "fake") {
+
+    if (!platform.touched) {
+        platform.touched = true;
+        // не даем прыгнуть
+        return;
+    }
+}
+
+// проверка шипов
+if (platform.type === "spike") {
+
+    let spikeStart = platform.spikeSide === "left"
+        ? platform.x
+        : platform.x + platform.width / 2;
+
+    let spikeEnd = spikeStart + platform.width / 2;
+
+    let playerCenter = player.x + player.width / 2;
+
+    if (playerCenter > spikeStart && playerCenter < spikeEnd) {
+
+        gameState = "gameover";
+        return;
+    }
+}
+
+player.velocityY = jumpPower;
+player.onGround = true;
+
+if (platform.type === "break")
+    platform.broken = true;
                 ) {
 
                     player.velocityY = jumpPower;
@@ -405,6 +461,8 @@
 
                         platform.y = -platformHeight;
                         platform.broken = false;
+                        platform.touched=false;
+                        platform.spikeSide = Math.random() > 0.5 ? "left" : "right";
                     }
                 });
             }
