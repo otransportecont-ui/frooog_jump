@@ -131,12 +131,26 @@ function update(){
     if(player.velocityX<0) player.facing=-1;
 
     // Отрисовка игрока
-    ctx.save(); ctx.translate(player.x+player.width/2,player.y+player.height/2); ctx.scale(player.facing,1);
-    let sprite;
-    if(player.onGround) sprite=player_stand;
-    else if(player.velocityY>0) sprite=player.facing===1?player_flyd:player_flyd_left;
-    else sprite=player.facing===1?player_fly:player_fly_left;
-    ctx.drawImage(sprite,-player.width/2,-player.height/2,player.width,player.height); ctx.restore();
+ctx.save();
+ctx.translate(player.x + player.width/2, player.y + player.height/2);
+
+// Определяем спрайт
+let sprite;
+if(player.onGround){
+    sprite = player_stand;
+} else if(player.velocityY < 0){ // Летит вверх
+    sprite = player.velocityX >= 0 ? player_fly : player_fly_left;
+} else { // Летит вниз
+    sprite = player.velocityX >= 0 ? player_flyd : player_flyd_left;
+}
+
+// Если игрок движется влево, зеркалим спрайт
+let scaleX = 1;
+if(player.velocityX < 0) scaleX = -1;
+ctx.scale(scaleX,1);
+
+ctx.drawImage(sprite,-player.width/2,-player.height/2,player.width,player.height);
+ctx.restore();
 
     // Game Over
     if(player.y>canvas.height) gameState="gameover";
