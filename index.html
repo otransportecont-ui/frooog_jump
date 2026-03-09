@@ -47,43 +47,46 @@ canvas {
 <div id="score">0</div>
 <button id="gyroButton">Использовать наклоны</button>
 <canvas id="gameCanvas"></canvas>
+
 <script>
 window.onerror = function(message, source, lineno, colno, error) {
     console.error("Ошибка: " + message);
-    // Не блокируем игру alert(), только логгируем
 };
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
-// НАСТРОЙКИ ШРИФТА
-
-let gameFont = "bold 48px Arial";      // большой текст
-let buttonFont = "bold 36px Arial";    // кнопки
-let smallFont = "24px Arial";          // маленький текст
-
-function setGameFont(Arial){
-    gameFont = "bold 48px " + Arial;
-    buttonFont = "bold 36px " + Arial;
-    smallFont = "24px " + Arial;
-}
 const scoreDisplay = document.getElementById("score");
 const gyroButton = document.getElementById("gyroButton");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// ======================================
+// Настройки шрифта
+// ======================================
+let gameFont = "bold 48px Arial";    
+let buttonFont = "bold 36px Arial";  
+let smallFont = "24px Arial";        
+
+function setGameFont(fontName){
+    gameFont = "bold 48px " + fontName;
+    buttonFont = "bold 36px " + fontName;
+    smallFont = "24px " + fontName;
+}
+
+// ======================================
+// Глобальные переменные
+// ======================================
 let gravity = 0.5;
 let jumpPower = -15;
 let score = 0;
 let lastPlatformY = 0;
 let gameStarted = false;
-let gameState = "start"; 
-// start
-// playing
-// gameover
+let gameState = "start"; // start, playing, gameover
 
-// Загрузка изображений с fallback
+// ======================================
+// Загрузка изображений
+// ======================================
 let background = new Image();
 background.src = "background.png";
 
@@ -101,7 +104,10 @@ player_flyd.src = "player_flyd.png";
 
 let player_flyd_left = new Image();
 player_flyd_left.src = "player_flyd_left.png";
-    
+
+// ======================================
+// Игрок
+// ======================================
 let player = {
     x: canvas.width / 2,
     y: canvas.height - 100,
@@ -113,6 +119,9 @@ let player = {
     onGround: false
 };
 
+// ======================================
+// Платформы
+// ======================================
 let platforms = [];
 let platformWidth = 80;
 let platformHeight = 15;
@@ -129,68 +138,7 @@ class Platform {
         this.direction = 1;
     }
 
-    // ============================
-// СТАРТОВЫЙ ЭКРАН
-// ============================
-
-function drawStartScreen(){
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    if (background.complete){
-        ctx.drawImage(background,0,0,canvas.width,canvas.height);
-    }
-
-    ctx.fillStyle="white";
-    ctx.textAlign="center";
-
-    ctx.font=gameFont;
-    ctx.fillText("Frooog Jump",canvas.width/2,canvas.height/2-80);
-
-    ctx.font=buttonFont;
-    ctx.fillText("Играть",canvas.width/2,canvas.height/2);
-}
-
-
-// ============================
-// ЭКРАН ПРОИГРЫША
-// ============================
-
-function drawGameOver(){
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    if (background.complete){
-        ctx.drawImage(background,0,0,canvas.width,canvas.height);
-    }
-
-    ctx.fillStyle="white";
-    ctx.textAlign="center";
-
-    ctx.font=gameFont;
-    ctx.fillText("Вы проиграли",canvas.width/2,canvas.height/2-100);
-
-    ctx.font=smallFont;
-    ctx.fillText("Ваш счет: "+score,canvas.width/2,canvas.height/2-50);
-
-    ctx.font=buttonFont;
-    ctx.fillText("Заново",canvas.width/2,canvas.height/2+50);
-}
-    
     update() {
-        // Проверяем состояние игры
-
-if(gameState==="start"){
-    drawStartScreen();
-    requestAnimationFrame(update);
-    return;
-}
-
-if(gameState==="gameover"){
-    drawGameOver();
-    requestAnimationFrame(update);
-    return;
-}
         if (this.type === "moving") {
             let speed = Math.min(2 + score * 0.002, 8);
             this.x += speed * this.direction;
@@ -207,7 +155,6 @@ if(gameState==="gameover"){
 
         if (!this.broken) {
             ctx.fillRect(this.x, this.y, this.width, this.height);
-            // Обводка для видимости
             ctx.strokeStyle = "#333";
             ctx.lineWidth = 2;
             ctx.strokeRect(this.x, this.y, this.width, this.height);
@@ -217,16 +164,9 @@ if(gameState==="gameover"){
 
 function overlapsPlatform(x, y) {
     for (let p of platforms) {
-
         let sameHeight = Math.abs(p.y - y) < platformHeight;
-
-        let overlapX =
-            x < p.x + p.width &&
-            x + platformWidth > p.x;
-
-        if (sameHeight && overlapX) {
-            return true;
-        }
+        let overlapX = x < p.x + p.width && x + platformWidth > p.x;
+        if (sameHeight && overlapX) return true;
     }
     return false;
 }
@@ -234,27 +174,89 @@ function overlapsPlatform(x, y) {
 function createPlatforms() {
     platforms = [];
     let y = canvas.height - 50;
-    // Стартовая платформа под игроком
     platforms.push(new Platform(canvas.width/2 - platformWidth/2, canvas.height - 50, "static"));
     
     while (y > -platformGap) {
         let x;
-            let attempts = 0;
-
-            do {
-                x = Math.random() * (canvas.width - platformWidth);
-                attempts++;
-    } while (overlapsPlatform(x, y) && attempts < 10);
+        let attempts = 0;
+        do {
+            x = Math.random() * (canvas.width - platformWidth);
+            attempts++;
+        } while (overlapsPlatform(x, y) && attempts < 10);
         let type = Math.random() > 0.8 ? "moving" : (Math.random() > 0.9 ? "break" : "static");
         platforms.push(new Platform(x, y, type));
         y -= platformGap;
     }
 }
 
+// ======================================
+// Стартовый экран
+// ======================================
+function drawStartScreen() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if (background.complete && background.naturalHeight !== 0){
+        ctx.drawImage(background,0,0,canvas.width,canvas.height);
+    } else {
+        ctx.fillStyle="#87CEEB";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    ctx.fillStyle="white";
+    ctx.textAlign="center";
+
+    ctx.font = gameFont;
+    ctx.fillText("Frooog Jump", canvas.width/2, canvas.height/2 - 80);
+
+    ctx.font = buttonFont;
+    ctx.fillText("Играть", canvas.width/2, canvas.height/2);
+}
+
+// ======================================
+// Экран проигрыша
+// ======================================
+function drawGameOver() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if (background.complete && background.naturalHeight !== 0){
+        ctx.drawImage(background,0,0,canvas.width,canvas.height);
+    } else {
+        ctx.fillStyle="#87CEEB";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    ctx.fillStyle="white";
+    ctx.textAlign="center";
+
+    ctx.font = gameFont;
+    ctx.fillText("Вы проиграли", canvas.width/2, canvas.height/2 - 100);
+
+    ctx.font = smallFont;
+    ctx.fillText("Ваш счет: " + score, canvas.width/2, canvas.height/2 - 50);
+
+    ctx.font = buttonFont;
+    ctx.fillText("Заново", canvas.width/2, canvas.height/2 + 50);
+}
+
+// ======================================
+// Главный цикл
+// ======================================
 function update() {
+
+    // состояния start/gameover
+    if(gameState==="start"){
+        drawStartScreen();
+        requestAnimationFrame(update);
+        return;
+    }
+    if(gameState==="gameover"){
+        drawGameOver();
+        requestAnimationFrame(update);
+        return;
+    }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // ФОН: если картинка не загрузилась — рисуем градиент
     if (background.complete && background.naturalHeight !== 0) {
         ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
     } else {
@@ -270,7 +272,6 @@ function update() {
     player.y += player.velocityY;
     player.x += player.velocityX;
 
-    // Границы экрана
     if (player.x > canvas.width - player.width) {
         player.x = canvas.width - player.width;
         player.velocityX = 0;
@@ -285,7 +286,6 @@ function update() {
     platforms.forEach(platform => {
         platform.update();
 
-        // Коллизия: только при падении вниз
         if (
             player.velocityY > 0 &&
             player.x + player.width > platform.x &&
@@ -297,19 +297,13 @@ function update() {
             player.velocityY = jumpPower;
             player.onGround = true;
 
-            if (platform.type === "break") {
-                platform.broken = true;
-            }
-                        // Начисление очков за новые платформы
-
-            if (platform.type === "break") {
-                platform.broken = true;
-            }
+            if (platform.type === "break") platform.broken = true;
         }
+
         platform.draw();
     });
 
-    // Камера: скроллинг вверх
+    // Камера
     if (player.y < canvas.height / 3) {
         let diff = canvas.height / 3 - player.y;
         score += Math.floor(diff/10);
@@ -318,62 +312,52 @@ function update() {
 
         platforms.forEach(platform => {
             platform.y += diff;
-            // Рециклинг платформ
-            if (platform.y > canvas.height) { 
-                platform.y = -platformHeight; 
-                let attempts = 0;
-
+            if (platform.y > canvas.height) {
+                let attempts=0;
                 do {
-                        platform.x = Math.random() * (canvas.width - platformWidth);
-                        attempts++;
-                } while (overlapsPlatform(platform.x, platform.y) && attempts < 10);
-                platform.broken = false; 
-                } 
-            }); 
+                    platform.x = Math.random()*(canvas.width-platformWidth);
+                    attempts++;
+                } while (overlapsPlatform(platform.x, platform.y) && attempts<10);
+                platform.y=-platformHeight;
+                platform.broken=false;
+            }
+        });
     }
-         
 
-    // Отрисовка персонажа
+    // Игрок
     ctx.save();
     ctx.translate(player.x + player.width/2, player.y + player.height/2);
     ctx.scale(player.facing, 1);
 
-    // Спрайт: летит, если не на земле
-   let sprite;
+    let sprite;
+    if (player.onGround) sprite = player_stand;
+    else if (player.velocityY>0) sprite = player.velocityX>=0? player_flyd : player_flyd_left;
+    else sprite = player.velocityX>=0? player_fly : player_fly_left;
 
-    if (player.onGround) {
-        sprite = player_stand;
-    } 
-    else if (player.velocityY > 0) { // ПАДАЕТ
-        sprite = player.velocityX >= 0 ? player_flyd : player_flyd_left;
-    } 
-    else { // ЛЕТИТ ВВЕРХ
-        sprite = player.velocityX >= 0 ? player_fly : player_fly_left;
-    }
-    
-    if (sprite.complete && sprite.naturalHeight !== 0) {
-        ctx.drawImage(sprite, -player.width/2, -player.height/2, player.width, player.height);
+    if(sprite.complete && sprite.naturalHeight!==0){
+        ctx.drawImage(sprite,-player.width/2,-player.height/2,player.width,player.height);
     } else {
-        // Fallback: рисуем квадрат, если картинка не загрузилась
-        ctx.fillStyle = player.onGround ? "#4CAF50" : "#2196F3";
-        ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-        ctx.fillStyle = "#fff";
-        ctx.font = "12px Arial";
-        ctx.fillText("🐸", -10, 5);
+        ctx.fillStyle = player.onGround? "#4CAF50":"#2196F3";
+        ctx.fillRect(-player.width/2,-player.height/2,player.width,player.height);
+        ctx.fillStyle="#fff";
+        ctx.font="12px Arial";
+        ctx.fillText("🐸",-10,5);
     }
 
     ctx.restore();
 
     // Game Over
-    if (player.y > canvas.height) {
-    gameState="gameover";
-    return;
-}
+    if(player.y>canvas.height){
+        gameState="gameover";
+        return;
+    }
 
     requestAnimationFrame(update);
 }
 
-// Управление: гироскоп + клавиатура + тач
+// ======================================
+// Управление гироскопом
+// ======================================
 gyroButton.addEventListener("click", () => {
     if (typeof DeviceOrientationEvent.requestPermission === "function") {
         DeviceOrientationEvent.requestPermission()
@@ -391,117 +375,93 @@ gyroButton.addEventListener("click", () => {
 });
 
 function handleOrientation(event) {
-    if (event.gamma !== null) {
-        player.velocityX = event.gamma * 0.4; // gamma: наклон влево/вправо
-    }
+    if (event.gamma !== null) player.velocityX = event.gamma * 0.4;
 }
 
-// Клавиатура для тестов на ПК
+// ======================================
+// Управление клавиатурой
+// ======================================
 window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") player.velocityX = -8;
-    if (e.key === "ArrowRight") player.velocityX = 8;
-    if (e.key === " " && player.onGround) player.velocityY = jumpPower;
+    if(e.key==="ArrowLeft") player.velocityX=-8;
+    if(e.key==="ArrowRight") player.velocityX=8;
+    if(e.key===" " && player.onGround) player.velocityY=jumpPower;
+});
+window.addEventListener("keyup",(e)=>{
+    if(e.key==="ArrowLeft"||e.key==="ArrowRight") player.velocityX=0;
 });
 
-window.addEventListener("keyup", (e) => {
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        player.velocityX = 0;
+// ======================================
+// Обработка клика по кнопкам
+// ======================================
+canvas.addEventListener("click",function(e){
+    let clickX=e.clientX;
+    let clickY=e.clientY;
+
+    if(gameState==="start"){
+        if(clickX>canvas.width/2-150 && clickX<canvas.width/2+150 &&
+           clickY>canvas.height/2-50 && clickY<canvas.height/2+50){
+            gameState="playing";
+            score=0;
+            scoreDisplay.innerText=score;
+            player.y=canvas.height-100;
+            player.velocityY=0;
+            createPlatforms();
+        }
+    }
+
+    if(gameState==="gameover"){
+        if(clickX>canvas.width/2-150 && clickX<canvas.width/2+150 &&
+           clickY>canvas.height/2 && clickY<canvas.height/2+100){
+            score=0;
+            scoreDisplay.innerText=score;
+            player.y=canvas.height-100;
+            player.velocityY=0;
+            createPlatforms();
+            gameState="playing";
+        }
     }
 });
 
-// Запуск игры после загрузки изображений
+// ======================================
+// Запуск игры после загрузки
+// ======================================
 let imagesLoaded = 0;
 const totalImages = 6;
 
-function checkStart() {
+function checkStart(){
     imagesLoaded++;
-    if (imagesLoaded >= totalImages || !gameStarted) {
-        // Запускаем, даже если не все картинки загрузились (fallback)
-        if (!gameStarted) {
-            gameStarted = true;
-            gameState = "start";
+    if(imagesLoaded>=totalImages || !gameStarted){
+        if(!gameStarted){
+            gameStarted=true;
+            gameState="start";
             createPlatforms();
             update();
         }
     }
 }
+
 background.onload = background.onerror = checkStart;
 player_stand.onload = player_stand.onerror = checkStart;
 player_fly.onload = player_fly.onerror = checkStart;
 player_fly_left.onload = player_fly_left.onerror = checkStart;
 player_flyd.onload = player_flyd.onerror = checkStart;
 player_flyd_left.onload = player_flyd_left.onerror = checkStart;
-    
-// Если картинки кэшированы и onload не сработает
-if (background.complete) checkStart();
-if (player_stand.complete) checkStart();
-if (player_fly.complete) checkStart();
-if (player_fly_left.complete) checkStart();
-if (player_flyd.complete) checkStart();
-if (player_flyd_left.complete) checkStart();
-    
+
+if(background.complete) checkStart();
+if(player_stand.complete) checkStart();
+if(player_fly.complete) checkStart();
+if(player_fly_left.complete) checkStart();
+if(player_flyd.complete) checkStart();
+if(player_flyd_left.complete) checkStart();
+
+// ======================================
 // Ресайз окна
-window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-canvas.addEventListener("click", function(event){
-
-    let clickX = event.clientX;
-    let clickY = event.clientY;
-
-    // -------------------
-    // СТАРТОВЫЙ ЭКРАН
-    // -------------------
-
-    if(gameState === "start"){
-
-        if(
-            clickX > canvas.width/2 - 150 &&
-            clickX < canvas.width/2 + 150 &&
-            clickY > canvas.height/2 - 50 &&
-            clickY < canvas.height/2 + 50
-        ){
-
-            gameState = "playing";
-
-            score = 0;
-            scoreDisplay.innerText = score;
-
-            player.y = canvas.height - 100;
-            player.velocityY = 0;
-
-            createPlatforms();
-        }
-    }
-
-
-    // -------------------
-    // ЭКРАН ПРОИГРЫША
-    // -------------------
-
-    if(gameState === "gameover"){
-
-        if(
-            clickX > canvas.width/2 - 150 &&
-            clickX < canvas.width/2 + 150 &&
-            clickY > canvas.height/2 &&
-            clickY < canvas.height/2 + 100
-        ){
-
-            score = 0;
-            scoreDisplay.innerText = score;
-
-            player.y = canvas.height - 100;
-            player.velocityY = 0;
-
-            createPlatforms();
-
-            gameState = "playing";
-        }
-    }
-
-});
+// ======================================
+window.addEventListener("resize",()=>{
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
 });
 </script>
+
 </body>
 </html>
