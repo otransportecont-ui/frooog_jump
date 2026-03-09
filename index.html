@@ -348,9 +348,10 @@ function update() {
 
     // Game Over
     if(player.y>canvas.height){
-        gameState="gameover";
-        return;
-    }
+    gameState="gameover";
+    requestAnimationFrame(update);
+    return;
+}
 
     requestAnimationFrame(update);
 }
