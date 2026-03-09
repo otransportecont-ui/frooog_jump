@@ -2,46 +2,47 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Frooog Jump</title>
 
 <style>
-body {
-    margin: 0;
-    overflow: hidden;
-    font-family: Arial;
+body{
+margin:0;
+overflow:hidden;
+font-family:Arial;
 }
 
-canvas {
-    display: block;
+canvas{
+display:block;
 }
 
-#score {
-    position: fixed;
-    top: 15px;
-    left: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-    text-shadow: 2px 2px 4px black;
-    z-index: 10;
+#score{
+position:fixed;
+top:15px;
+left:20px;
+font-size:24px;
+font-weight:bold;
+color:white;
+text-shadow:2px 2px 4px black;
+z-index:10;
 }
 
-#gyroButton {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 20px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: none;
-    background: orange;
-    color: white;
-    z-index: 20;
+#gyroButton{
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+padding:12px 20px;
+font-size:18px;
+border-radius:10px;
+border:none;
+background:orange;
+color:white;
+z-index:20;
 }
 </style>
 </head>
+
 <body>
 
 <div id="score">0</div>
@@ -49,427 +50,358 @@ canvas {
 <canvas id="gameCanvas"></canvas>
 
 <script>
-window.onerror = function(message, source, lineno, colno, error) {
-    console.error("Ошибка: " + message);
+
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
+const scoreDisplay=document.getElementById("score");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let gravity=0.5;
+let jumpPower=-15;
+
+let score=0;
+let gameState="start";
+
+let platformWidth=80;
+let platformHeight=15;
+let platformGap=120;
+
+let platforms=[];
+
+// изображения
+let background=new Image();
+background.src="background.png";
+
+let player_stand=new Image();
+player_stand.src="player_stand.png";
+
+let player_fly=new Image();
+player_fly.src="player_fly.png";
+
+let player_flyd=new Image();
+player_flyd.src="player_flyd.png";
+
+// игрок
+let player={
+x:0,
+y:0,
+width:50,
+height:50,
+velocityX:0,
+velocityY:0,
+onGround:false
 };
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const scoreDisplay = document.getElementById("score");
-const gyroButton = document.getElementById("gyroButton");
+function resetPlayer(){
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+player.x=canvas.width/2;
+player.y=canvas.height-150;
 
-// ======================================
-// Настройки шрифта
-// ======================================
-let gameFont = "bold 48px Arial";    
-let buttonFont = "bold 36px Arial";  
-let smallFont = "24px Arial";        
+player.velocityX=0;
+player.velocityY=0;
 
-function setGameFont(fontName){
-    gameFont = "bold 48px " + fontName;
-    buttonFont = "bold 36px " + fontName;
-    smallFont = "24px " + fontName;
+player.onGround=false;
+
 }
 
-// ======================================
-// Глобальные переменные
-// ======================================
-let gravity = 0.5;
-let jumpPower = -15;
-let score = 0;
-let lastPlatformY = 0;
-let gameStarted = false;
-let gameState = "start"; // start, playing, gameover
+// платформа
+class Platform{
 
-// ======================================
-// Загрузка изображений
-// ======================================
-let background = new Image();
-background.src = "background.png";
+constructor(x,y,type="static"){
 
-let player_stand = new Image();
-player_stand.src = "player_stand.png";
+this.x=x;
+this.y=y;
+this.width=platformWidth;
+this.height=platformHeight;
 
-let player_fly = new Image();
-player_fly.src = "player_fly.png";
+this.type=type;
+this.broken=false;
+this.direction=1;
 
-let player_fly_left = new Image();
-player_fly_left.src = "player_fly_left.png";
-
-let player_flyd = new Image();
-player_flyd.src = "player_flyd.png";
-
-let player_flyd_left = new Image();
-player_flyd_left.src = "player_flyd_left.png";
-
-// ======================================
-// Игрок
-// ======================================
-let player = {
-    x: canvas.width / 2,
-    y: canvas.height - 100,
-    width: 50,
-    height: 50,
-    velocityY: 0,
-    velocityX: 0,
-    facing: 1,
-    onGround: false
-};
-// ======================================
-// Сброс игрока в начальную позицию
-// ======================================
-function resetPlayer() {
-    player.x = canvas.width / 2;      // по центру
-    player.y = canvas.height - 100;   // немного над дном
-    player.velocityY = 0;
-    player.velocityX = 0;
-    player.onGround = false;
-    player.facing = 1;
-}
-// ======================================
-// Платформы
-// ======================================
-let platforms = [];
-let platformWidth = 80;
-let platformHeight = 15;
-let platformGap = 120;
-
-class Platform {
-    constructor(x, y, type="static") {
-        this.x = x;
-        this.y = y;
-        this.width = platformWidth;
-        this.height = platformHeight;
-        this.type = type;
-        this.broken = false;
-        this.direction = 1;
-    }
-
-    update() {
-        if (this.type === "moving") {
-            let speed = Math.min(2 + score * 0.002, 8);
-            this.x += speed * this.direction;
-            if (this.x <= 0 || this.x + this.width >= canvas.width) {
-                this.direction *= -1;
-            }
-        }
-    }
-
-    draw() {
-        if (this.type === "static") ctx.fillStyle = "#4CAF50";
-        if (this.type === "moving") ctx.fillStyle = "#FF9800";
-        if (this.type === "break") ctx.fillStyle = this.broken ? "#999" : "#f44336";
-
-        if (!this.broken) {
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.strokeStyle = "#333";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(this.x, this.y, this.width, this.height);
-        }
-    }
 }
 
-function overlapsPlatform(x, y) {
-    for (let p of platforms) {
-        let sameHeight = Math.abs(p.y - y) < platformHeight;
-        let overlapX = x < p.x + p.width && x + platformWidth > p.x;
-        if (sameHeight && overlapX) return true;
-    }
-    return false;
+update(){
+
+if(this.type==="moving"){
+
+this.x+=2*this.direction;
+
+if(this.x<=0||this.x+this.width>=canvas.width){
+
+this.direction*=-1;
+
 }
 
-function createPlatforms() {
-    platforms = [];
-    let y = canvas.height - 50;
-    platforms.push(new Platform(canvas.width/2 - platformWidth/2, canvas.height - 50, "static"));
-    
-    while (y > -platformGap) {
-        let x;
-        let attempts = 0;
-        do {
-            x = Math.random() * (canvas.width - platformWidth);
-            attempts++;
-        } while (overlapsPlatform(x, y) && attempts < 10);
-        let type = Math.random() > 0.8 ? "moving" : (Math.random() > 0.9 ? "break" : "static");
-        platforms.push(new Platform(x, y, type));
-        y -= platformGap;
-    }
 }
 
-// ======================================
-// Стартовый экран
-// ======================================
-function drawStartScreen() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    if (background.complete && background.naturalHeight !== 0){
-        ctx.drawImage(background,0,0,canvas.width,canvas.height);
-    } else {
-        ctx.fillStyle="#87CEEB";
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-    }
-
-    ctx.fillStyle="white";
-    ctx.textAlign="center";
-
-    ctx.font = gameFont;
-    ctx.fillText("Frooog Jump", canvas.width/2, canvas.height/2 - 80);
-
-    ctx.font = buttonFont;
-    ctx.fillText("Играть", canvas.width/2, canvas.height/2);
 }
 
-// ======================================
-// Экран проигрыша
-// ======================================
-function drawGameOver() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+draw(){
 
-    if (background.complete && background.naturalHeight !== 0){
-        ctx.drawImage(background,0,0,canvas.width,canvas.height);
-    } else {
-        ctx.fillStyle="#87CEEB";
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-    }
+if(this.broken)return;
 
-    ctx.fillStyle="white";
-    ctx.textAlign="center";
+if(this.type==="static")ctx.fillStyle="#4CAF50";
+if(this.type==="moving")ctx.fillStyle="#FF9800";
+if(this.type==="break")ctx.fillStyle="#f44336";
 
-    ctx.font = gameFont;
-    ctx.fillText("Вы проиграли", canvas.width/2, canvas.height/2 - 100);
+ctx.fillRect(this.x,this.y,this.width,this.height);
 
-    ctx.font = smallFont;
-    ctx.fillText("Ваш счет: " + score, canvas.width/2, canvas.height/2 - 50);
-
-    ctx.font = buttonFont;
-    ctx.fillText("Заново", canvas.width/2, canvas.height/2 + 50);
 }
 
-// ======================================
-// Главный цикл
-// ======================================
-function update() {
-
-    // состояния start/gameover
-    if(gameState==="start"){
-        drawStartScreen();
-        requestAnimationFrame(update);
-        return;
-    }
-    if(gameState==="gameover"){
-        drawGameOver();
-        requestAnimationFrame(update);
-        return;
-    }
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (background.complete && background.naturalHeight !== 0) {
-        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-    } else {
-        let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, "#87CEEB");
-        gradient.addColorStop(1, "#E0F7FA");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Физика
-    player.velocityY += gravity;
-    player.y += player.velocityY;
-    player.x += player.velocityX;
-
-    if (player.x > canvas.width - player.width) {
-        player.x = canvas.width - player.width;
-        player.velocityX = 0;
-    }
-    if (player.x < 0) {
-        player.x = 0;
-        player.velocityX = 0;
-    }
-
-    player.onGround = false;
-
-    platforms.forEach(platform => {
-        platform.update();
-
-        if (
-            player.velocityY > 0 &&
-            player.x + player.width > platform.x &&
-            player.x < platform.x + platform.width &&
-            player.y + player.height > platform.y &&
-            player.y + player.height < platform.y + platform.height + player.velocityY &&
-            !platform.broken
-        ) {
-            player.velocityY = jumpPower;
-            player.onGround = true;
-
-            if (platform.type === "break") platform.broken = true;
-        }
-
-        platform.draw();
-    });
-
-    // Камера
-    if (player.y < canvas.height / 3) {
-        let diff = canvas.height / 3 - player.y;
-        score += Math.floor(diff/10);
-        scoreDisplay.innerText = score;
-        player.y = canvas.height / 3;
-
-        platforms.forEach(platform => {
-            platform.y += diff;
-            if (platform.y > canvas.height) {
-                let attempts=0;
-                do {
-                    platform.x = Math.random()*(canvas.width-platformWidth);
-                    attempts++;
-                } while (overlapsPlatform(platform.x, platform.y) && attempts<10);
-                platform.y=-platformHeight;
-                platform.broken=false;
-            }
-        });
-    }
-
-    // Игрок
-    ctx.save();
-    ctx.translate(player.x + player.width/2, player.y + player.height/2);
-    ctx.scale(player.facing, 1);
-
-    let sprite;
-    if (player.onGround) sprite = player_stand;
-    else if (player.velocityY>0) sprite = player.velocityX>=0? player_flyd : player_flyd_left;
-    else sprite = player.velocityX>=0? player_fly : player_fly_left;
-
-    if(sprite.complete && sprite.naturalHeight!==0){
-        ctx.drawImage(sprite,-player.width/2,-player.height/2,player.width,player.height);
-    } else {
-        ctx.fillStyle = player.onGround? "#4CAF50":"#2196F3";
-        ctx.fillRect(-player.width/2,-player.height/2,player.width,player.height);
-        ctx.fillStyle="#fff";
-        ctx.font="12px Arial";
-        ctx.fillText("🐸",-10,5);
-    }
-
-    ctx.restore();
-
-    // Game Over
-    if(player.y>canvas.height){
-    gameState="gameover";
-    requestAnimationFrame(update);
-    return;
 }
 
-    requestAnimationFrame(update);
+// генерация платформ
+function createPlatforms(){
+
+platforms=[];
+
+let y=canvas.height-50;
+
+platforms.push(new Platform(canvas.width/2-40,y));
+
+while(y>-canvas.height){
+
+let x=Math.random()*(canvas.width-platformWidth);
+
+let type="static";
+
+let r=Math.random();
+
+if(r>0.8)type="moving";
+if(r>0.9)type="break";
+
+platforms.push(new Platform(x,y,type));
+
+y-=platformGap;
+
 }
 
-// ======================================
-// Управление гироскопом
-// ======================================
-gyroButton.addEventListener("click", () => {
-    if (typeof DeviceOrientationEvent.requestPermission === "function") {
-        DeviceOrientationEvent.requestPermission()
-            .then(permissionState => {
-                if (permissionState === "granted") {
-                    window.addEventListener("deviceorientation", handleOrientation);
-                    gyroButton.style.display = "none";
-                }
-            })
-            .catch(err => console.error("Гироскоп:", err));
-    } else {
-        window.addEventListener("deviceorientation", handleOrientation);
-        gyroButton.style.display = "none";
-    }
+}
+
+// полный перезапуск игры
+function startNewGame(){
+
+score=0;
+scoreDisplay.innerText=score;
+
+resetPlayer();
+
+createPlatforms();
+
+}
+
+// стартовый экран
+function drawStart(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+if(background.complete){
+
+ctx.drawImage(background,0,0,canvas.width,canvas.height);
+
+}
+
+ctx.fillStyle="white";
+ctx.textAlign="center";
+
+ctx.font="bold 48px Arial";
+ctx.fillText("Frooog Jump",canvas.width/2,canvas.height/2-80);
+
+ctx.font="bold 36px Arial";
+ctx.fillText("Играть",canvas.width/2,canvas.height/2);
+
+}
+
+// экран проигрыша
+function drawGameOver(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+if(background.complete){
+
+ctx.drawImage(background,0,0,canvas.width,canvas.height);
+
+}
+
+ctx.fillStyle="white";
+ctx.textAlign="center";
+
+ctx.font="bold 48px Arial";
+ctx.fillText("Вы проиграли",canvas.width/2,canvas.height/2-100);
+
+ctx.font="24px Arial";
+ctx.fillText("Ваш счет: "+score,canvas.width/2,canvas.height/2-40);
+
+ctx.font="bold 36px Arial";
+ctx.fillText("Заново",canvas.width/2,canvas.height/2+60);
+
+}
+
+// обновление игры
+function update(){
+
+if(gameState==="start"){
+
+drawStart();
+requestAnimationFrame(update);
+return;
+
+}
+
+if(gameState==="gameover"){
+
+drawGameOver();
+requestAnimationFrame(update);
+return;
+
+}
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+if(background.complete){
+
+ctx.drawImage(background,0,0,canvas.width,canvas.height);
+
+}
+
+// физика
+player.velocityY+=gravity;
+
+player.y+=player.velocityY;
+player.x+=player.velocityX;
+
+if(player.x<0)player.x=0;
+if(player.x>canvas.width-player.width)player.x=canvas.width-player.width;
+
+player.onGround=false;
+
+// платформы
+platforms.forEach(p=>{
+
+p.update();
+
+if(
+player.velocityY>0 &&
+player.x+player.width>p.x &&
+player.x<p.x+p.width &&
+player.y+player.height>p.y &&
+player.y+player.height<p.y+20 &&
+!p.broken
+){
+
+player.velocityY=jumpPower;
+
+player.onGround=true;
+
+if(p.type==="break")p.broken=true;
+
+}
+
+p.draw();
+
 });
 
-function handleOrientation(event) {
-    if (event.gamma !== null) player.velocityX = event.gamma * 0.4;
+// камера
+if(player.y<canvas.height/3){
+
+let diff=canvas.height/3-player.y;
+
+player.y=canvas.height/3;
+
+platforms.forEach(p=>{
+
+p.y+=diff;
+
+if(p.y>canvas.height){
+
+p.y=-platformHeight;
+
+p.x=Math.random()*(canvas.width-platformWidth);
+
+p.broken=false;
+
 }
 
-// ======================================
-// Управление клавиатурой
-// ======================================
-window.addEventListener("keydown", (e) => {
-    if(e.key==="ArrowLeft") player.velocityX=-8;
-    if(e.key==="ArrowRight") player.velocityX=8;
-    if(e.key===" " && player.onGround) player.velocityY=jumpPower;
-});
-window.addEventListener("keyup",(e)=>{
-    if(e.key==="ArrowLeft"||e.key==="ArrowRight") player.velocityX=0;
 });
 
-// ======================================
-// Обработка клика по кнопкам
-// ======================================
-canvas.addEventListener("click",function(e){
-    let clickX=e.clientX;
-    let clickY=e.clientY;
+score+=Math.floor(diff/10);
+scoreDisplay.innerText=score;
 
-    if(gameState==="start"){
-        if(clickX>canvas.width/2-150 && clickX<canvas.width/2+150 &&
-           clickY>canvas.height/2-50 && clickY<canvas.height/2+50){
-            gameState="playing";
-            score=0;
-            scoreDisplay.innerText=score;
-            resetPlayer();
-            createPlatforms();
-        }
-    }
-
-    if(gameState==="gameover"){
-        if(clickX>canvas.width/2-150 && clickX<canvas.width/2+150 &&
-           clickY>canvas.height/2 && clickY<canvas.height/2+100){
-            score=0;
-            scoreDisplay.innerText=score;
-            resetPlayer();
-            createPlatforms();
-            gameState="playing";
-        }
-    }
-});
-
-// ======================================
-// Запуск игры после загрузки
-// ======================================
-let imagesLoaded = 0;
-const totalImages = 6;
-
-function checkStart(){
-    imagesLoaded++;
-    if(imagesLoaded>=totalImages || !gameStarted){
-        if(!gameStarted){
-            gameStarted=true;
-            gameState="start";
-            createPlatforms();
-            update();
-        }
-    }
 }
 
-background.onload = background.onerror = checkStart;
-player_stand.onload = player_stand.onerror = checkStart;
-player_fly.onload = player_fly.onerror = checkStart;
-player_fly_left.onload = player_fly_left.onerror = checkStart;
-player_flyd.onload = player_flyd.onerror = checkStart;
-player_flyd_left.onload = player_flyd_left.onerror = checkStart;
+// игрок
+let sprite=player_stand;
 
-if(background.complete) checkStart();
-if(player_stand.complete) checkStart();
-if(player_fly.complete) checkStart();
-if(player_fly_left.complete) checkStart();
-if(player_flyd.complete) checkStart();
-if(player_flyd_left.complete) checkStart();
+if(!player.onGround){
 
-// ======================================
-// Ресайз окна
-// ======================================
+if(player.velocityY>0)sprite=player_flyd;
+else sprite=player_fly;
+
+}
+
+ctx.drawImage(sprite,player.x,player.y,50,50);
+
+// смерть
+if(player.y>canvas.height){
+
+gameState="gameover";
+
+}
+
+requestAnimationFrame(update);
+
+}
+
+// управление
+window.addEventListener("keydown",e=>{
+
+if(e.key==="ArrowLeft")player.velocityX=-8;
+if(e.key==="ArrowRight")player.velocityX=8;
+
+});
+
+window.addEventListener("keyup",()=>{
+
+player.velocityX=0;
+
+});
+
+// клики
+canvas.addEventListener("click",e=>{
+
+let x=e.clientX;
+let y=e.clientY;
+
+if(gameState==="start"){
+
+gameState="playing";
+startNewGame();
+
+}
+
+else if(gameState==="gameover"){
+
+gameState="playing";
+startNewGame();
+
+}
+
+});
+
+// старт
+startNewGame();
+update();
+
+// resize
 window.addEventListener("resize",()=>{
-    canvas.width=window.innerWidth;
-    canvas.height=window.innerHeight;
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
 });
+
 </script>
 
 </body>
