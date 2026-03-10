@@ -247,11 +247,13 @@ platforms.push(new Platform(x,y,type))
 y-=platformGap
 }
 if(!hasMoving && platforms.length > 2){
-platforms[2].type = "moving"
+let i = Math.floor(Math.random() * (platforms.length - 2)) + 2
+platforms[i].type = "moving"
 }
 
-if(!hasBreak && platforms.length > 3){
-platforms[3].type = "break"
+if(!hasBreak && platforms.length > 2){
+let i = Math.floor(Math.random() * (platforms.length - 2)) + 2
+platforms[i].type = "break"
 }
 }
 
