@@ -216,6 +216,27 @@ return "static"
 }
 
 
+function shufflePlatformTypes(){
+
+let types=[]
+
+for(let i=1;i<platforms.length;i++){
+types.push(platforms[i].type)
+}
+
+for(let i=types.length-1;i>0;i--){
+let j=Math.floor(Math.random()*(i+1))
+let temp=types[i]
+types[i]=types[j]
+types[j]=temp
+}
+
+for(let i=1;i<platforms.length;i++){
+platforms[i].type=types[i-1]
+}
+}
+
+
 function createPlatforms(){
 
 platforms=[]
@@ -246,15 +267,7 @@ platforms.push(new Platform(x,y,type))
 
 y-=platformGap
 }
-if(!hasMoving && platforms.length > 2){
-let i = Math.floor(Math.random() * (platforms.length - 2)) + 2
-platforms[i].type = "moving"
-}
-
-if(!hasBreak && platforms.length > 2){
-let i = Math.floor(Math.random() * (platforms.length - 2)) + 2
-platforms[i].type = "break"
-}
+shufflePlatformTypes()
 }
 
 /* =========================
