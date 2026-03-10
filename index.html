@@ -199,13 +199,13 @@ return false
 /* =========================
 ГЕНЕРАЦИЯ ПЛАТФОРМ
 ========================= */
-ffunction getPlatformType(){
+function getPlatformType(){
 
 let difficulty = Math.min(Math.max((score - 500) / 6000, 0), 1)
 
-let staticChance = 0.8 - difficulty * 0.55
-let movingChance = 0.15 + difficulty * 0.25
-let breakChance = 0.05 + difficulty * 0.30
+let staticChance = 0.75 - difficulty * 0.55
+let movingChance = 0.15 + difficulty * 0.20
+let breakChance = 0.10 + difficulty * 0.35
 
 let r = Math.random()
 
