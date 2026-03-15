@@ -62,7 +62,8 @@ canvas.height=innerHeight
 ========================= */
 
 let gameFont="bold 48px Arial"
-let buttonFont="bold 36px Arial"
+let button1Font="bold 36px Arial"
+let button2Font="bold 36px Times New Roman"
 let smallFont="24px Arial"
 
 function setGameFont(font){
@@ -296,7 +297,7 @@ drawBackground()
 ctx.fillStyle="white"
 ctx.textAlign="center"
 
-ctx.font=buttonFont
+ctx.font=button1Font
 ctx.fillText("Приходите",W()/2,H()/2-140)
 ctx.fillText("на нашу постановку",W()/2,H()/2-100)
 ctx.fillText("21 марта в 11:00",W()/2,H()/2-60)
@@ -304,7 +305,7 @@ ctx.fillText("21 марта в 11:00",W()/2,H()/2-60)
 ctx.font=smallFont
 ctx.fillText("Ваш счет: "+score,W()/2,H()/2-10)
 
-ctx.font=buttonFont
+ctx.font=button2Font
 ctx.fillText("Заново",W()/2,H()/2+70)
 
 }
