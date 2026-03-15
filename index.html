@@ -67,7 +67,6 @@ let smallFont="24px Arial"
 
 function setGameFont(font){
 gameFont=`bold 60px ${font}`
-nameFont=`bold 36px ${font}`
 buttonFont=`bold 36px ${font}`
 smallFont=`24px ${font}`
 }
@@ -297,7 +296,7 @@ drawBackground()
 ctx.fillStyle="white"
 ctx.textAlign="center"
 
-ctx.font=nameFont
+ctx.font=buttonFont
 ctx.fillText("Приходте на нашу постановку 21 марта в 11:00!",W()/2,H()/2-100)
 
 ctx.font=smallFont
